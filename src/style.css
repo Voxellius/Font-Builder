@@ -57,3 +57,12 @@ body {
     zoom: 8;
     image-rendering: pixelated;
 }
+
+.tools {
+    position: fixed;
+    bottom: 0.5rem;
+    left: 0.5rem;
+    padding: 0.25rem;
+    background-color: white;
+    border: 2px solid black;
+}

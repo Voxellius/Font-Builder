@@ -2,7 +2,7 @@ import * as opentype from "/lib/opentype.mjs";
 
 var font = null;
 var fontSize = 16;
-var fontBitDepth = 1;
+var fontHighestValue = 1;
 var fontThreshold = 0;
 var fontHeightAbove = 0;
 var webFont = null;
@@ -13,6 +13,8 @@ function createGlyphItem(characters, drawImportedCharacters = false) {
     var characterInput = document.createElement("input");
     var canvas = document.createElement("canvas");
     var context = canvas.getContext("2d");
+    var pointerIsDown = false;
+    var isErasing = false;
 
     element.setWidth = function(width) {
         width = Math.ceil(width);
@@ -41,11 +43,22 @@ function createGlyphItem(characters, drawImportedCharacters = false) {
             imageData.data[i + 0] = 0;
             imageData.data[i + 1] = 0;
             imageData.data[i + 2] = 0;
-            imageData.data[i + 3] = Math.round((imageData.data[i + 3] + fontThreshold) / (255 / fontBitDepth)) * (255 / fontBitDepth);
+            imageData.data[i + 3] = Math.round((imageData.data[i + 3] + fontThreshold) / (255 / fontHighestValue)) * (255 / fontHighestValue);
         }
 
         canvas.width = canvas.width;
         context.putImageData(imageData, 0, 0);
+    };
+
+    element.setPixel = function(x, y, value = Number(document.querySelector("#drawValue").value)) {
+        var pixel = context.createImageData(1, 1);
+
+        pixel.data[0] = 0;
+        pixel.data[1] = 0;
+        pixel.data[2] = 0;
+        pixel.data[3] = value * (255 / fontHighestValue);
+        
+        context.putImageData(pixel, x, y);
     };
 
     element.drawImportedFont = function(characters = characterInput.value) {
@@ -83,6 +96,40 @@ function createGlyphItem(characters, drawImportedCharacters = false) {
         }
     }
 
+    canvas.addEventListener("pointerdown", function(event) {
+        pointerIsDown = true;
+        isErasing = event.button == 2;
+
+        element.setPixel(
+            Math.floor(event.offsetX / parseInt(getComputedStyle(canvas).zoom)),
+            Math.floor(event.offsetY / parseInt(getComputedStyle(canvas).zoom)),
+            isErasing ? 0 : undefined
+        );
+
+        event.preventDefault();
+    });
+
+    canvas.addEventListener("contextmenu", function(event) {
+        event.preventDefault();
+    });
+
+    canvas.addEventListener("pointermove", function(event) {
+        if (!pointerIsDown) {
+            return;
+        }
+
+        element.setPixel(
+            Math.floor(event.offsetX / parseInt(getComputedStyle(canvas).zoom)),
+            Math.floor(event.offsetY / parseInt(getComputedStyle(canvas).zoom)),
+            isErasing ? 0 : undefined
+        );
+    });
+
+    canvas.addEventListener("pointerup", function() {
+        pointerIsDown = false;
+        isErasing = false;
+    });
+
     document.querySelector(".glyphs").append(element);
 
     return element;
@@ -106,9 +153,11 @@ window.addEventListener("load", function(event) {
         var file = document.querySelector("#importFileInput").files[0];
 
         fontSize = Number(document.querySelector("#importSize").value);
-        fontBitDepth = Number(document.querySelector("#importBitDepth").value);
+        fontHighestValue = Number(2 ** (document.querySelector("#importBitDepth").value - 1));
         fontThreshold = Number(document.querySelector("#importThreshold").value);
         fontHeightAbove = Number(document.querySelector("#importHeightAbove").value);
+
+        document.querySelector("#drawValue").max = fontHighestValue;
 
         if (webFont != null) {
             document.fonts.delete(webFont);
