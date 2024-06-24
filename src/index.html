@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Voxellius Font Builder</title>
+        <meta charset="utf-8">
+        <link rel="stylesheet" href="style.css">
+        <script type="module" src="script.js"></script>
+    </head>
+    <body>
+        <h1>Voxellius Font Builder</h1>
+        <div class="panel">
+            <h2>Import file</h2>
+            <input type="file" id="importFileInput">
+            <label for="importSize">Size</label>
+            <input type="number" value="16" min="1" max="200" id="importSize">
+            <label for="importBitDepth">Bit depth</label>
+            <input type="number" value="1" min="1" max="8" id="importBitDepth">
+            <label for="importThreshold">Threshold</label>
+            <input type="number" value="0" min="-255" max="255" id="importThreshold">
+            <label for="importHeightAbove">Height above</label>
+            <input type="number" value="0" min="0" max="200" id="importHeightAbove">
+            <button id="importButton">Import</button>
+        </div>
+        <div class="glyphs"></div>
+    </body>
+</html>
