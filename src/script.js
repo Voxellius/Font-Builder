@@ -1,7 +1,10 @@
 import * as opentype from "/lib/opentype.mjs";
 
+import * as vxf from "./vxf.js";
+
 var font = null;
 var fontSize = 16;
+var fontBitDepth = 1;
 var fontHighestValue = 1;
 var fontThreshold = 0;
 var fontHeightAbove = 0;
@@ -12,7 +15,7 @@ function createGlyphItem(characters, drawImportedCharacters = false) {
     var characterInputContainer = document.createElement("div");
     var characterInput = document.createElement("input");
     var canvas = document.createElement("canvas");
-    var context = canvas.getContext("2d");
+    var context = canvas.getContext("2d", {willReadFrequently: true});
     var pointerIsDown = false;
     var isErasing = false;
 
@@ -32,7 +35,7 @@ function createGlyphItem(characters, drawImportedCharacters = false) {
         return context.getImageData(0, 0, canvas.width, canvas.height);
     };
 
-    element.normaliseBitmap = function(initial = false) {
+    element.normaliseBitmap = function() {
         var imageData = element.getImageData();
 
         if (imageData == null) {
@@ -135,7 +138,7 @@ function createGlyphItem(characters, drawImportedCharacters = false) {
     return element;
 }
 
-async function loadFont(file) {
+async function importFont(file) {
     var data = await file.arrayBuffer();
 
     font = opentype.parse(data, {lowMemory: true});
@@ -148,12 +151,32 @@ async function loadFont(file) {
     }
 }
 
-window.addEventListener("load", function(event) {
-    document.querySelector("#importButton").addEventListener("click", async function(event) {
+function generateFontData() {
+    var fontStore = new vxf.Font(fontSize, fontBitDepth);
+
+    document.querySelectorAll(".glyph").forEach(function(element) {
+        var canvas = element.querySelector("canvas");
+        var imageData = element.getImageData();
+        
+        var glyph = new vxf.Glyph(fontStore, element.querySelector(".glyphCharacterInput").value, canvas.width);
+
+        for (var i = 0; i < imageData.data.length; i += 4) {
+            glyph.values[i / 4] = imageData.data[i + 3];
+        }
+
+        fontStore.glyphs.push(glyph);
+    });
+
+    return fontStore;
+}
+
+window.addEventListener("load", function() {
+    document.querySelector("#importButton").addEventListener("click", async function() {
         var file = document.querySelector("#importFileInput").files[0];
 
         fontSize = Number(document.querySelector("#importSize").value);
-        fontHighestValue = Number(2 ** (document.querySelector("#importBitDepth").value - 1));
+        fontBitDepth = Number(document.querySelector("#importBitDepth").value);
+        fontHighestValue = 2 ** (fontBitDepth - 1);
         fontThreshold = Number(document.querySelector("#importThreshold").value);
         fontHeightAbove = Number(document.querySelector("#importHeightAbove").value);
 
@@ -169,6 +192,13 @@ window.addEventListener("load", function(event) {
 
         document.fonts.add(webFont);
 
-        await loadFont(document.querySelector("#importFileInput").files[0]);
+        await importFont(document.querySelector("#importFileInput").files[0]);
+    });
+
+    document.querySelector("#saveButton").addEventListener("click", function() {
+        var fontStore = generateFontData();
+        var encodedData = fontStore.encode();
+
+        console.log(fontStore, encodedData, new TextDecoder().decode(encodedData));
     });
 });
