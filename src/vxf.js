@@ -79,7 +79,8 @@ export class Font {
                 "serif": codeGen.vxfTokens.PROPERTY_LETTERFORM_SERIF,
                 "monospaced": codeGen.vxfTokens.PROPERTY_LETTERFORM_MONOSPACED,
                 "handwriting": codeGen.vxfTokens.PROPERTY_LETTERFORM_HANDWRITING,
-                "cursive": codeGen.vxfTokens.PROPERTY_LETTERFORM_CURSIVE
+                "cursive": codeGen.vxfTokens.PROPERTY_LETTERFORM_CURSIVE,
+                "pictographic": codeGen.vxfTokens.PROPERTY_LETTERFORM_PICTOGRAPHIC
             }[this.letterform] || codeGen.vxfTokens.PROPERTY_LETTERFORM_SANS_SERIF),
             this.italic ? codeGen.bytes(codeGen.vxfTokens.PROPERTY_ITALIC) : codeGen.bytes(),
             codeGen.bytes({
